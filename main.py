@@ -13,14 +13,14 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
 # Bot Configuration
-TOKEN = '8591869223:AAFlYWSL9i3x_5KCXAxdGHG2rBcgx6x2-Wk'
+TOKEN = '8568309620:AAG9dBWt2kdlN5yOUxg0ZMgZNSa9SvDm8Ag'
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
 # Global Variables
-admin = 7926510116
-myid = ['7926510116']
+admin = 8597415233
+myid = ['8597415233']
 stopuser = {}
 command_usage = {}
 
