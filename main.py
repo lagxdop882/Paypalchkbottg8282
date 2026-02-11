@@ -24,34 +24,74 @@ myid = ['8597415233']
 stopuser = {}
 command_usage = {}
 
-# Load proxies
-def load_proxies():
+# Auto Proxy System
+PROXIES = []
+ua = UserAgent()
+proxy_lock = threading.Lock()
+
+async def scrape_proxies():
+    """Auto scrape fresh proxies every 5min"""
+    global PROXIES
     try:
-        with open('proxies.txt', 'r') as f:
-            proxies = []
-            for line in f:
-                line = line.strip()
-                if line:
-                    parts = line.split(':')
-                    if len(parts) == 4:
-                        host, port, user, password = parts
-                        proxy_url = f"http://{user}:{password}@{host}:{port}"
-                        proxies.append(proxy_url)
-            return proxies
-    except Exception as e:
-        print(f"Error loading proxies: {e}")
-        return []
+        print("🔄 Scraping fresh proxies...")
+        
+        # ProxyScrape
+        resp1 = requests.get("https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=all", timeout=10)
+        proxies1 = [f"http://{line.strip()}" for line in resp1.text.strip().split('\n') if line.strip()]
+        
+        # FreeProxyList
+        resp2 = requests.get("https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt", timeout=10)
+        proxies2 = [f"http://{line.strip()}" for line in resp2.text.strip().split('\n') if line.strip()]
+        
+        # Combine + shuffle
+        all_proxies = proxies1[:50] + proxies2[:50]
+        random.shuffle(all_proxies)
+        PROXIES.extend(all_proxies)
+        
+        print(f"✅ Loaded {len(PROXIES)} proxies")
+        return len(PROXIES)
+    except:
+        print("❌ Proxy scrape failed")
+        return 0
 
-PROXIES = load_proxies()
-proxy_index = 0
+def get_working_proxy():
+    """Get random working proxy"""
+    with proxy_lock:
+        if not PROXIES:
+            return None
+        proxy = random.choice(PROXIES)
+        PROXIES.remove(proxy)  # Remove used proxy
+        if len(PROXIES) < 10:
+            asyncio.create_task(scrape_proxies())
+        return {"http": proxy, "https": proxy}
 
-def get_next_proxy():
-    global proxy_index
-    if not PROXIES:
-        return None
-    proxy = PROXIES[proxy_index % len(PROXIES)]
-    proxy_index += 1
-    return proxy
+async def test_proxy(proxy):
+    """Quick proxy test"""
+    try:
+        resp = requests.get("http://httpbin.org/ip", proxies=proxy, timeout=6)
+        return resp.status_code == 200
+    except:
+        return False
+
+async def create_payment_method(fullz):
+    """✅ FIXED 403 ERROR VERSION"""
+    max_retries = 5
+    for attempt in range(max_retries):
+        proxy = get_working_proxy()
+        if proxy:
+            try:
+                if not await test_proxy(proxy):
+                    print("❌ Bad proxy, skipping")
+                    continue
+            except:
+                continue
+                
+        session = requests.Session()
+        if proxy:
+            session.proxies.update(proxy)
+            session.headers.update({'User-Agent': ua.random})
+        
+        try:
 
 
 # Luhn Check
